@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Renviron
+.httr-oauth
+.DS_Store
+.quarto
+*.Rcheck/
+*.tar.gz
+*.zip
+.r-lib/
+.agents/
+.codex/
+/VLabR_函数使用说明_中文.txt
+/vlab_travel_中文说明.md

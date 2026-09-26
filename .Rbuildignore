@@ -1,0 +1,16 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^development\.R$
+^LICENSE\.md$
+^\.github$
+^\.git
+^\.r-lib$
+^\.agents$
+^\.codex$
+^.*\.Rcheck$
+^.*\.tar\.gz$
+^\.Rhistory$
+^\.Renviron$
+^data-raw$
+^VLabR_函数使用说明_中文\.txt$
+^vlab_travel_中文说明\.md$
