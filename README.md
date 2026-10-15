@@ -32,6 +32,135 @@ If you need to reinstall the latest GitHub version over an existing local copy:
 remotes::install_github("LaboratoireV/VLabR", force = TRUE, upgrade = "never")
 ```
 
+### Built-in Alberta hospital data
+
+`alberta_hospitals` is an offline data frame containing **112 facilities** with
+hospital names, full addresses, cities, postal codes, latitude and longitude.
+Each record also includes its AHS facility ID, source links, inclusion basis and
+retrieval date (**October 12, 2026**).
+
+```r
+library(VLabR)
+data("alberta_hospitals", package = "VLabR")
+
+head(alberta_hospitals[c("hospital_name", "address", "latitude", "longitude")])
+subset(alberta_hospitals, city == "Edmonton")
+subset(alberta_hospitals, emergency_24h == 1L)
+?alberta_hospitals
+```
+
+The dataset covers the 104 Alberta locations listed in the official
+[AHS Hospitals directory](https://www.albertahealthservices.ca/findhealth/service.aspx?Id=1001416),
+plus eight inpatient specialist facilities documented in the help page.
+Lloydminster Hospital is excluded because its address is in Saskatchewan.
+Standalone outpatient clinics, continuing-care/auxiliary facilities and historical
+hospitals are outside the scope. Separately named facilities sharing a campus
+remain separate rows. This snapshot does not guarantee an exhaustive legal
+register or indicate current emergency-service availability.
+
+`emergency_24h` is an integer **1/0 flag** for a hospital's own emergency
+department with a published regular **24-hour, seven-day schedule**. `0` includes
+both facilities without an ED and those with limited scheduled ED hours.
+The October 12, 2026 review has **94 ones and 18 zeros**. It uses ED-specific
+hours, not general hospital opening hours. Individual temporary closures do not
+change the flag; ongoing reduced weekly schedules count as `0`.
+Per-facility sources, assessments and review dates are bundled in
+`alberta-hospitals-emergency.csv` alongside the location CSV.
+
+Coordinates come directly from the AHS web map in decimal degrees; they are
+facility locations, not verified vehicle entrances. Loading the data requires
+no internet connection, geocoding service or API key. The existing
+`alberta_health_facilities` dataset remains the broader list of facility names.
+
+An auditable CSV is included in the installed package:
+
+```r
+system.file("extdata", "alberta-hospitals.csv", package = "VLabR")
+```
+
+Maintainers can refresh the sources with `data-raw/update-alberta-hospitals.py`
+and rebuild the R data with `data-raw/create-alberta-hospitals.R`.
+Scope, refresh instructions and source attribution are recorded in
+[`data-raw/alberta-hospitals-sources.txt`](data-raw/alberta-hospitals-sources.txt).
+
+### Three nearest hospitals and two fixed destinations
+
+`vlab_nearest_hospitals()` adds **13 columns** to a data frame: nine for the
+three nearest hospitals by increasing road-route distance, plus four for routes
+to **Foothills Medical Centre** and **University of Alberta Hospital**. The
+nearest-three candidates default to all facilities in `alberta_hospitals`.
+
+```r
+locations <- data.frame(
+  longitude = c(-113.4938, -114.0719),
+  latitude = c(53.5461, 51.0447)
+)
+
+result <- vlab_nearest_hospitals(locations)
+
+# Format all five travel times as HH:MM:SS:
+result_hms <- vlab_nearest_hospitals(locations, travel_time_format = TRUE)
+
+# Restrict the nearest three to hospitals with a regular 24-hour ED;
+# the four fixed-destination columns are still included:
+result_ed <- vlab_nearest_hospitals(locations, emergency_only = TRUE)
+
+# If your coordinate columns have different names:
+result <- vlab_nearest_hospitals(my_data, longitude = "lon", latitude = "lat")
+```
+
+For each rank `1`, `2`, and `3`, the added columns are:
+
+| Column (`i` = rank) | Contents |
+| --- | --- |
+| `nearest_hospital_i` | Hospital name |
+| `nearest_hospital_i_travel_time_seconds` | Estimated driving time in seconds |
+| `nearest_hospital_i_travel_distance_meters` | Driving distance in metres |
+
+The four fixed-destination columns are always included, even when either
+hospital is already among the nearest three:
+
+| Column | Contents |
+| --- | --- |
+| `foothills_medical_centre_travel_time_seconds` | Time to Foothills Medical Centre, seconds |
+| `foothills_medical_centre_travel_distance_meters` | Distance to Foothills Medical Centre, metres |
+| `university_of_alberta_hospital_travel_time_seconds` | Time to University of Alberta Hospital, seconds |
+| `university_of_alberta_hospital_travel_distance_meters` | Distance to University of Alberta Hospital, metres |
+
+Set `travel_time_format = TRUE` to return **all five travel-time columns** as
+`HH:MM:SS` character strings, using `vlab_second2format()`. For example, 1000
+seconds becomes `"00:16:40"`. The default is `FALSE` (numeric seconds).
+Column names, including their `_seconds` suffix, stay the same, and the function
+still adds 13 columns. Distances remain numeric metres. Missing times remain
+`NA`; fractional seconds round to the nearest second (half seconds round up),
+and hours can exceed 24. Formatting happens after ranking, so it does not change
+the selected hospitals or their order.
+
+These two destinations always use their bundled coordinates. A custom
+`hospitals` list or `emergency_only = TRUE` affects only the nearest-three
+candidates. Fixed destinations outside that candidate list do not enter its
+ranking. Routes are reused when a candidate has the same coordinates.
+
+Original rows and columns are retained. Every eligible hospital is compared,
+and repeated origin coordinates share one lookup. Equal distances are ordered
+by travel time, then hospital row order. Co-located facilities remain separate
+candidates. Invalid input coordinates produce 13 `NA` values. A failed candidate
+request leaves all nine nearest-hospital results as `NA` with a warning.
+Successful fixed-hospital results are retained independently; a failed or
+unreachable fixed destination gets `NA` in its two columns. If fewer than three
+candidates are reachable, available ranks are returned and the rest are `NA`.
+Use `on_error = "stop"` to stop on these issues, or `"na"` to suppress warnings.
+
+Routing uses the [OSRM Table service](https://project-osrm.org/docs/v5.24.0/api/#table-service),
+with the same metres/seconds units as `vlab_travel()`. Distances follow OSRM's
+fastest routes, rather than guaranteed minimum-length road paths; time estimates
+do not include live traffic. The default public server requires network access
+and no API key, and is intended for light use. Coordinates are sent to the chosen
+server. For larger datasets or local routing, supply your own server, for example
+`server = "http://127.0.0.1:5001"`. The server must support Table distance and
+duration annotations. See `?vlab_nearest_hospitals` for batching, credentials,
+custom hospital lists and overwrite options.
+
 ### Startup package loading
 
 Load the default VLabR workflow package set in the current R session:
@@ -77,6 +206,7 @@ available for name masking and package loading.
 | `vlab_fix_colname()` | - | Clean column names by replacing spaces and removing selected special characters. |
 | `vlab_get_duplicates()` | - | Find duplicated rows by one or more key columns. |
 | `vlab_google_travel()` | - | In development: add Google Routes API travel distance and travel time; current traffic is disabled by default. |
+| `vlab_nearest_hospitals()` | - | Add the three nearest hospitals with route time and distance, plus fixed routes to Foothills Medical Centre and University of Alberta Hospital (13 columns). |
 | `vlab_check_unique()` | - | Check whether a column contains unique values. |
 | `vlab_count_unique_categories()` | - | Count unique categories in a variable. |
 | `vlab_cross_table()` | - | Build a two-variable cross table with counts and percentages. |
@@ -105,6 +235,9 @@ available for name masking and package loading.
 | `vlab_apply_name_masking_rules()` | `apply_name_masking_rules()` | Apply supplementary regex-based name-masking rules. |
 | `vlab_todate()` | - | Convert common date inputs to R `Date` values. |
 | `vlab_todatetime()` | - | Convert common date and date-time inputs to R `POSIXct` values. |
+| `vlab_second2format()` | - | Format seconds as `HH:MM:SS`, with cumulative hours. |
+| `vlab_similarscore()` | - | Compare strings or numbers with a similarity score from 0 to 1, allowing common typos. |
+| `vlab_withintime()` | - | Return 1/0 for whether two date-times are within a chosen interval; missing times return 0. |
 | `vlab_travel()` | - | Experimental: add OSRM road travel distance and travel time for coordinate pairs. |
 | `vlab_boost_data()` | - | Detect and convert date-like columns in a data set. |
 | `vlab_load_packages()` | `load_packages()` | Install missing packages and load a package list. |
@@ -229,6 +362,63 @@ Get today's date:
 vlab_today()
 ```
 
+Format a duration in seconds:
+
+```r
+vlab_second2format(1000)
+# [1] "00:16:40"
+
+vlab_second2format(c(60, 3661, 90061, NA))
+# [1] "00:01:00" "01:01:01" "25:01:01" NA
+
+trips <- data.frame(travel_time_seconds = c(1000, 3661, NA))
+trips$travel_time_formatted <- vlab_second2format(trips$travel_time_seconds)
+```
+
+The result is a character vector. Hours accumulate past 24; missing values
+remain `NA`. Fractional seconds are rounded to the nearest whole second, with
+half seconds rounded up. Non-missing input must be numeric, finite and
+non-negative. This also works with the travel-time columns returned by
+`vlab_travel()` and `vlab_nearest_hospitals()`.
+
+Compare strings or numeric identifiers:
+
+```r
+vlab_similarscore("E123456", "e1223456")
+# [1] 0.875
+
+vlab_similarscore(123456, "123456")
+# [1] 1
+
+vlab_similarscore("AB12", "AB21")
+# [1] 0.75
+
+vlab_similarscore("ABC", "abc", ignore_case = FALSE)
+# [1] 0
+
+records <- data.frame(
+  original = c("E123456", "ABC", NA),
+  entered = c("e1223456", "abc", "XYZ")
+)
+records$similarity <- vlab_similarscore(records$original, records$entered)
+# Scores: 0.875, 1, NA
+```
+
+`vlab_similarscore()` converts numbers to strings and ignores case by default.
+It uses normalized optimal string alignment (restricted Damerau-Levenshtein)
+distance: `1 - edits / longer_string_length`. Each insertion, deletion,
+substitution or adjacent swap costs one edit, without editing a substring more
+than once. Thus `0.875` means 87.5% similarity under this rule; it is not a
+probability that two identifiers belong to the same record.
+
+Two vectors are compared row by row; a single value can be compared with every
+element of a vector. Other unequal lengths are rejected. Missing values return
+`NA`; two empty strings score `1`, and an empty/non-empty pair scores `0`.
+Spaces and punctuation count as characters. Keep identifiers as strings when
+leading zeros or exact long numbers matter: numeric conversion uses R's
+`as.character()` formatting and cannot recover digits already lost on import.
+See `?vlab_similarscore` for details.
+
 Convert common date and date-time inputs:
 
 ```r
@@ -256,6 +446,55 @@ Values such as `13/02/2026` support day/month/year, while `02/13/2026`
 supports month/day/year. The order with more evidence is used; `day_first` is
 the fallback for a tie. Inputs already stored with a year from 0000 to 0099
 are also normalized using the two-digit-year cutoff.
+
+Flag date-times that are within a chosen interval:
+
+```r
+# The third argument is the threshold; the default unit is hours.
+vlab_withintime("2026-10-14 09:00", "2026-10-14 12:00", 3)
+# [1] 1
+
+vlab_withintime("2026-10-14 09:00", "2026-10-14 12:01", 3)
+# [1] 0
+
+vlab_withintime("2026-10-14 09:00", "2026-10-14 09:30", 30, unit = "minute")
+# [1] 1
+
+vlab_withintime(NA, "2026-10-14 09:00", 3)
+# [1] 0
+
+visits <- data.frame(
+  arrival = c("2026-10-14 09:00", "2026-10-14 09:00", NA),
+  assessment = c("2026-10-14 11:00", "2026-10-14 13:00", "2026-10-14 10:00")
+)
+visits$within_3h <- vlab_withintime(
+  visits$arrival, visits$assessment, 3, tz = "America/Edmonton"
+)
+# Flags: 1, 0, 0
+```
+
+`vlab_withintime(time1, time2, threshold)` compares the **absolute** elapsed
+time difference with an **inclusive** threshold. Units are `"day"`, `"hour"`,
+`"minute"`, and `"second"`; fractional thresholds are allowed. A day means
+24 elapsed hours. Either order of the two times gives the same result.
+Vectors are compared row by row, and a scalar can be compared with an entire
+column. Missing values always return integer `0`, even when both are missing.
+
+Existing date-times are used directly. For text or factor inputs, each column's
+first **50 non-missing values** are used to infer day/month order, then every
+row is parsed using VLabR's supported date-time formats. Use `sample_size = 30`
+to inspect 30 values instead. Unambiguous sampled dates determine the preferred
+order; ties or no evidence use `day_first = FALSE` (month/day/year), or
+`day_first = TRUE` for day/month/year. A different supported format appearing
+after the sample is still parsed. Unparseable non-missing values return `0`
+with a warning identifying the input and count.
+
+Text without an explicit offset defaults to `tz = "UTC"`; use
+`tz = "America/Edmonton"` for Alberta local time. `Date` inputs mean midnight
+in that zone. Existing `POSIXct`/`POSIXlt` instants and explicit UTC offsets
+are respected. Numeric date inputs use the same conversion as
+`vlab_todatetime()`; set `numeric_origin` when the origin is known. Input
+columns are retained unchanged. See `?vlab_withintime` for full details.
 
 Automatically convert date-like columns in a data set:
 
