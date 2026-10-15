@@ -82,13 +82,7 @@ vlab_similarscore <- function(x, y, ignore_case = TRUE) {
   if (nx == 0L || ny == 0L) return(numeric(0))
 
   size <- max(nx, ny)
-  result_names <- if (nx == size && !is.null(x_names)) {
-    x_names
-  } else if (ny == size) {
-    y_names
-  } else {
-    NULL
-  }
+  result_names <- (if (nx == size) x_names) %||% (if (ny == size) y_names)
   if (nx == 1L) x <- rep(x, size)
   if (ny == 1L) y <- rep(y, size)
 

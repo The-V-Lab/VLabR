@@ -78,10 +78,10 @@ vlab_1_cont <- function(dataset,
     round(100 * missing_n / total_n, 1)
   }
 
-  build_result <- function(mean_sd,
-                           median,
-                           min_max,
-                           quantiles) {
+  build_result <- \(mean_sd,
+                    median,
+                    min_max,
+                    quantiles) {
     row <- c(
       list(
         Variable = display_name,
@@ -128,7 +128,7 @@ vlab_1_cont <- function(dataset,
   qs <- stats::quantile(x_ok, probs = probs, names = FALSE, type = 7)
 
   # Formatter
-  fmt <- function(v) sprintf(paste0("%.", digits, "f"), v)
+  fmt <- \(v) sprintf(paste0("%.", digits, "f"), v)
 
   build_result(
     mean_sd = sprintf("%s (%s)", fmt(m), fmt(sdv)),

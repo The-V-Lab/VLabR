@@ -47,7 +47,7 @@ vlab_SID_creator <- function(first_name, last_name, DOB_ready, gender, strip_acc
   .maybe_strip_accents <- function(x) {
     if (!strip_accents) return(x)
     # Try transliteration; if it fails, fall back to original
-    x2 <- tryCatch(iconv(x, from = "", to = "ASCII//TRANSLIT"), error = function(e) x)
+    x2 <- tryCatch(iconv(x, from = "", to = "ASCII//TRANSLIT"), error = \(e) x)
     x2[is.na(x2)] <- x[is.na(x2)]
     x2
   }
@@ -104,8 +104,7 @@ vlab_SID_creator <- function(first_name, last_name, DOB_ready, gender, strip_acc
 
   # invalid if any component missing
   invalid <- is.na(FN) | is.na(LN) | is.na(DOB) | is.na(G)
-
-  SID <- ifelse(invalid, "Invalid SID", paste0(FN, LN, DOB, G))
-  # ensure plain character, no NA (we used "Invalid SID" sentinel)
+  SID <- paste0(FN, LN, DOB, G)
+  SID[invalid] <- "Invalid SID"
   as.character(SID)
 }

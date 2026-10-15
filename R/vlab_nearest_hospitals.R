@@ -206,7 +206,7 @@ vlab_nearest_hospitals <- function(dataset,
     stop("The bundled hospital data are missing a fixed destination.", call. = FALSE)
   }
   fixed_hospitals <- bundled$alberta_hospitals[fixed_ids, , drop = FALSE]
-  if (is.null(hospitals)) hospitals <- bundled$alberta_hospitals
+  hospitals <- hospitals %||% bundled$alberta_hospitals
   required <- c("hospital_name", "longitude", "latitude",
                 if (emergency_only) "emergency_24h")
   if (!is.data.frame(hospitals) || anyDuplicated(names(hospitals)) ||

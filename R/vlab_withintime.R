@@ -100,13 +100,7 @@ vlab_withintime <- function(time1, time2, threshold,
          call. = FALSE)
   }
   size <- if (n1 == 0L || n2 == 0L) 0L else max(n1, n2)
-  result_names <- if (n1 == size && !is.null(names(time1))) {
-    names(time1)
-  } else if (n2 == size) {
-    names(time2)
-  } else {
-    NULL
-  }
+  result_names <- (if (n1 == size) names(time1)) %||% (if (n2 == size) names(time2))
 
   first <- vlab_withintime_datetime(time1, "time1", sample_size, tz,
                                     day_first, numeric_origin, two_digit_year_cutoff)

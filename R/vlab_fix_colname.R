@@ -15,12 +15,10 @@
 #'
 #' @export
 vlab_fix_colname <- function(the_data) {
-  new_names <- colnames(the_data)
-  new_names <- gsub(" ", "_", new_names, fixed = TRUE)
-  new_names <- gsub("[()]", "", new_names)
-  new_names <- gsub("'", "", new_names, fixed = TRUE)
-  new_names <- gsub("-", "", new_names, fixed = TRUE)
-
-  colnames(the_data) <- new_names
+  colnames(the_data) <- colnames(the_data) |>
+    gsub(" ", "_", x = _, fixed = TRUE) |>
+    gsub("[()]", "", x = _) |>
+    gsub("'", "", x = _, fixed = TRUE) |>
+    gsub("-", "", x = _, fixed = TRUE)
   the_data
 }

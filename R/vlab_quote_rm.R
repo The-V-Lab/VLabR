@@ -16,18 +16,18 @@ vlab_quote_rm <- function(data,
   if (!is.data.frame(data)) stop("`data` must be a data.frame")
 
   strip_chars <- function(x) {
-    for (ch in chars) x <- gsub(ch, "", x, fixed = TRUE)
-    x
+    Reduce(\(value, ch) gsub(ch, "", value, fixed = TRUE), chars, init = x)
   }
 
-  for (nm in names(data)) {
-    if (is.character(data[[nm]])) {
-      data[[nm]] <- strip_chars(data[[nm]])
-    } else if (is.factor(data[[nm]])) {
-      x <- strip_chars(as.character(data[[nm]]))
-      data[[nm]] <- factor(x, levels = unique(x))
+  data[] <- lapply(data, \(column) {
+    if (is.character(column)) {
+      strip_chars(column)
+    } else if (is.factor(column)) {
+      stripped <- strip_chars(as.character(column))
+      factor(stripped, levels = unique(stripped))
+    } else {
+      column
     }
-  }
-
+  })
   data
 }

@@ -55,20 +55,16 @@ vlab_data_type <- function(dataset, selected_columns) {
     )
   }
 
-  classify_column <- function(column) {
-    if (inherits(column, "Date") || inherits(column, "POSIXt")) {
-      return("date")
+  classify_column <- \(column) {
+    if (inherits(column, c("Date", "POSIXt"))) {
+      "date"
+    } else if (is.numeric(column)) {
+      "continuous"
+    } else if (is.character(column) || is.factor(column) || is.logical(column)) {
+      "categorical"
+    } else {
+      "other"
     }
-
-    if (is.numeric(column) || is.integer(column)) {
-      return("continuous")
-    }
-
-    if (is.character(column) || is.factor(column) || is.logical(column)) {
-      return("categorical")
-    }
-
-    "other"
   }
 
   output <- vapply(

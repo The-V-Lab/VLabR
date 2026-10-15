@@ -19,9 +19,5 @@ vlab_count_unique_categories <- function(dataset, var_name, include_missing = FA
   if (!var_name %in% names(dataset)) stop("Variable not found in the dataset: ", var_name)
 
   x <- dataset[[var_name]]
-  if (isTRUE(include_missing)) {
-    return(length(unique(x)))
-  } else {
-    return(length(unique(x[!is.na(x)])))
-  }
+  length(unique(if (isTRUE(include_missing)) x else x[!is.na(x)]))
 }

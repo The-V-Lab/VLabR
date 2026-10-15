@@ -22,7 +22,7 @@ vlab_cross_table <- function(dataset, row_var, col_var,
                               include_missing = TRUE, include_total = TRUE,
                               digits = 1L, missing_label = "Missing") {
   if (!is.data.frame(dataset)) stop("`dataset` must be a data frame or tibble.", call. = FALSE)
-  check_column <- function(x, arg) {
+  check_column <- \(x, arg) {
     if (!is.character(x) || length(x) != 1L || is.na(x) || !nzchar(x))
       stop("`", arg, "` must be one non-empty column name.", call. = FALSE)
     if (!x %in% names(dataset)) stop("Unknown `", arg, "`: ", x, ".", call. = FALSE)
@@ -31,7 +31,7 @@ vlab_cross_table <- function(dataset, row_var, col_var,
   row_var <- check_column(row_var, "row_var")
   col_var <- check_column(col_var, "col_var")
   percent <- match.arg(percent)
-  check_flag <- function(x, arg) {
+  check_flag <- \(x, arg) {
     if (!is.logical(x) || length(x) != 1L || is.na(x))
       stop("`", arg, "` must be TRUE or FALSE.", call. = FALSE)
     x
@@ -46,7 +46,7 @@ vlab_cross_table <- function(dataset, row_var, col_var,
       is.na(missing_label) || !nzchar(missing_label))
     stop("`missing_label` must be one non-empty character value.", call. = FALSE)
 
-  prepare <- function(x) {
+  prepare <- \(x) {
     lev <- if (is.factor(x)) levels(x) else unique(as.character(x[!is.na(x)]))
     x <- as.character(x)
     if (include_missing) x[is.na(x)] <- missing_label
@@ -63,9 +63,10 @@ vlab_cross_table <- function(dataset, row_var, col_var,
     column = sweep(n, 2L, colSums(n), "/"),
     total = n / sum(n), none = NULL)
   if (!is.null(p)) p[!is.finite(p)] <- 0
-  fmt <- function(count, pct = NULL) {
-    if (is.null(pct)) return(as.character(count))
-    paste0(count, " (", sprintf(paste0("%.", digits, "f%%"), 100 * pct), ")")
+  fmt <- \(count, pct = NULL) {
+    if (is.null(pct)) as.character(count) else {
+      paste0(count, " (", sprintf(paste0("%.", digits, "f%%"), 100 * pct), ")")
+    }
   }
   displayed <- if (percent == "none")
     matrix(fmt(as.vector(n)), nrow(n), dimnames = dimnames(n)) else

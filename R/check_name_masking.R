@@ -82,7 +82,7 @@ check_name_masking <- function(setup = TRUE,
       error = function(e) FALSE
     ),
     model_loaded = !is.null(state$model),
-    error = if (!is.null(setup_error)) setup_error else state$setup_error
+    error = setup_error %||% state$setup_error
   )
 
   cat("Name-masking environment\n")

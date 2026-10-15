@@ -122,11 +122,7 @@ vlab_mask_one <- function(value, side, n) {
     return("")
   }
 
-  mask_count <- if (is.null(n)) {
-    value_length
-  } else {
-    min(n, value_length)
-  }
+  mask_count <- min(n %||% value_length, value_length)
 
   if (mask_count == 0) {
     return(value)

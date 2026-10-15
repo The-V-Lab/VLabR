@@ -105,7 +105,7 @@ vlab_quantile_labels <- function(probs) {
 
   labels <- vapply(
     probs,
-    function(prob) {
+    \(prob) {
       if (abs(prob - 0.25) < tolerance) {
         return("Q1")
       }

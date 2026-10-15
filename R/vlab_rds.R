@@ -28,15 +28,13 @@ vlab_SRds <- function(data,
                        file = NULL,
                        compress = TRUE,
                        overwrite = TRUE) {
-  if (is.null(file)) {
+  file <- file %||% {
     object_name <- deparse(substitute(data), nlines = 1L)
-
     if (length(object_name) != 1L ||
         !grepl("^[[:alpha:].][[:alnum:]_.]*$", object_name)) {
       object_name <- "VLabR_data"
     }
-
-    file <- object_name
+    object_name
   }
 
   file <- vlab_rds_path(file)

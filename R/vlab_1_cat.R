@@ -66,7 +66,7 @@ vlab_1_cat <- function(dataset,
   # Add missing label if requested
   if (include_missing) {
     v <- as.character(v)
-    v <- ifelse(is.na(v), missing_label, v)
+    v[is.na(v)] <- missing_label
   } else {
     v <- v[!is.na(v)]
   }
@@ -82,7 +82,7 @@ vlab_1_cat <- function(dataset,
   if (is.factor(original_v) && sort_levels == "levels") {
     # If missing_label inserted, ensure it's appended to levels
     lv <- levels(original_v)
-    if (include_missing && !(missing_label %in% lv)) lv <- c(lv, missing_label)
+    if (include_missing && !missing_label %in% lv) lv <- c(lv, missing_label)
     v <- factor(v, levels = lv)
   } else {
     # Otherwise treat as character for flexible sorting later
@@ -154,7 +154,7 @@ vlab_1_cat <- function(dataset,
 
   total_n <- sum(counts$n)
 
-  pct_fmt <- function(n) sprintf(paste0("%.", digits, "f%%"), 100 * n / total_n)
+  pct_fmt <- \(n) sprintf(paste0("%.", digits, "f%%"), 100 * n / total_n)
 
   # Build display strings "n (p%)"
   counts$value <- paste0(counts$n, " (", pct_fmt(counts$n), ")")

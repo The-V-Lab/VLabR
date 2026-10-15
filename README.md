@@ -9,7 +9,8 @@ generation, and date formatting.
 The core data-cleaning helpers are intentionally lightweight. The personal-name
 masking workflow can use `reticulate` plus spaCy when Python is available, but it
 also has a pure R regex fallback for locked-down work computers where Python
-cannot be changed. VLabR requires R 4.1.0 or later.
+cannot be changed. VLabR requires R 4.4.0 or later and uses current base-R
+features such as the native pipe and `%||%`.
 
 ### Installation
 

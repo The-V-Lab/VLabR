@@ -30,7 +30,7 @@ vlab_get_duplicates <- function(data, ...,
   stopifnot(is.data.frame(data))
 
   dots <- as.list(substitute(list(...)))[-1L]
-  flatten_keys <- function(expr) {
+  flatten_keys <- \(expr) {
     if (is.call(expr) && identical(expr[[1L]], as.name("c"))) {
       unlist(lapply(as.list(expr)[-1L], flatten_keys), recursive = FALSE)
     } else {
@@ -72,46 +72,39 @@ vlab_get_duplicates <- function(data, ...,
     dat <- dat[stats::complete.cases(dat[, keys, drop = FALSE]), , drop = FALSE]
   }
 
-  same_key_row <- function(key_frame, one_row) {
-    matched <- rep(TRUE, nrow(key_frame))
-    for (key in names(key_frame)) {
-      x <- key_frame[[key]]
-      y <- one_row[[key]]
-      if (is.factor(x)) x <- as.character(x)
-      if (is.factor(y)) y <- as.character(y)
-      matched <- matched & ((is.na(x) & is.na(y)) | (!is.na(x) & !is.na(y) & x == y))
-    }
-    matched
-  }
-
   count_groups <- function(dat, keys) {
+    n <- nrow(dat)
     if (length(keys) == 0L) {
-      row_counts <- rep(nrow(dat), nrow(dat))
       counts <- data.frame(stringsAsFactors = FALSE)
-      counts[[.count_col]] <- nrow(dat)
-      return(list(counts = counts, row_counts = row_counts))
+      counts[[.count_col]] <- n
+      return(list(counts = counts, row_counts = rep(n, n)))
     }
 
     key_frame <- dat[, keys, drop = FALSE]
-    if (nrow(key_frame) == 0L) {
+    if (n == 0L) {
       counts <- key_frame
       counts[[.count_col]] <- integer()
       return(list(counts = counts, row_counts = integer()))
     }
 
-    unique_keys <- key_frame[!duplicated(key_frame), , drop = FALSE]
-    group_counts <- integer(nrow(unique_keys))
-    row_counts <- integer(nrow(key_frame))
-
-    for (i in seq_len(nrow(unique_keys))) {
-      matched <- same_key_row(key_frame, unique_keys[i, , drop = FALSE])
-      group_counts[i] <- sum(matched)
-      row_counts[matched] <- group_counts[i]
-    }
-
-    counts <- unique_keys
-    counts[[.count_col]] <- group_counts
-    list(counts = counts, row_counts = row_counts)
+    group_id <- Reduce(
+      \(left, col) {
+        pair <- interaction(
+          left,
+          match(col, unique(col)),
+          drop = TRUE,
+          lex.order = TRUE
+        )
+        match(pair, unique(pair))
+      },
+      key_frame,
+      init = rep(1L, n)
+    )
+    group_counts <- tabulate(group_id, nbins = max(group_id))
+    first <- !duplicated(key_frame)
+    counts <- key_frame[first, , drop = FALSE]
+    counts[[.count_col]] <- group_counts[group_id[first]]
+    list(counts = counts, row_counts = group_counts[group_id])
   }
 
   grouped <- count_groups(dat, keys)

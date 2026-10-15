@@ -182,8 +182,7 @@ disable_vlabr_startup_packages <- function(profile = "~/.Rprofile") {
 
 normalize_vlabr_repos <- function(repos) {
   if (
-    is.null(repos) ||
-      !length(repos) ||
+    !length(repos %||% character()) ||
       identical(unname(repos["CRAN"]), "@CRAN@")
   ) {
     return(c(CRAN = "https://cloud.r-project.org"))

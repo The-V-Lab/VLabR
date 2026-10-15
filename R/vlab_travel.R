@@ -215,7 +215,7 @@ vlab_travel_impl <- function(dataset,
     failures <- character()
 
     old_timeout <- getOption("timeout")
-    new_timeout <- if (is.null(old_timeout)) timeout else max(old_timeout, timeout)
+    new_timeout <- max(old_timeout %||% timeout, timeout)
     options(timeout = new_timeout)
     on.exit(options(timeout = old_timeout), add = TRUE)
 

@@ -17,7 +17,9 @@
 #' @export
 vlab_today <- function(date = Sys.Date()) {
   d <- suppressWarnings(as.Date(date))
-  if (is.na(d)) stop("`date` must be a Date or coercible to Date.")
+  if (length(d) != 1L || is.na(d)) {
+    stop("`date` must be a Date or coercible to Date.", call. = FALSE)
+  }
 
   out <- c(
     YMD_underscores = format(d, "%Y_%m_%d"),

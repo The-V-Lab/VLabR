@@ -45,19 +45,10 @@ vlab_check_unique <- function(data, var, na.rm = FALSE) {
   col <- data[[col_name]]
   n_rows   <- nrow(data)
   n_non_na <- sum(!is.na(col))
-  vals_for_unique <- if (na.rm) col[!is.na(col)] else col
+  vals_for_unique <- if (isTRUE(na.rm)) col[!is.na(col)] else col
   n_unique <- length(unique(vals_for_unique))
-
-  # Determine uniqueness criterion
-  is_unique <- if (na.rm) {
-    n_unique == n_non_na
-  } else {
-    n_unique == n_rows
-  }
-
-  # Identify duplicate values (respecting na.rm)
-  vals <- if (na.rm) col[!is.na(col)] else col
-  dup_vals <- unique(vals[duplicated(vals)])
+  is_unique <- anyDuplicated(vals_for_unique) == 0L
+  dup_vals <- unique(vals_for_unique[duplicated(vals_for_unique)])
 
   list(
     variable  = col_name,
